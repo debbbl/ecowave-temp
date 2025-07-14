@@ -11,6 +11,8 @@ import {
   UsersIcon,
   LogOutIcon,
   UserIcon,
+  FlagIcon,
+  Target
 } from "lucide-react";
 import {
   Avatar,
@@ -47,7 +49,7 @@ export const Layout = ({ children }: { children: React.ReactNode }): JSX.Element
       path: "/users",
     },
     { 
-      icon: <MessageSquareIcon size={21} />,
+      icon: <Target size={21} />,
       label: "Mission",
       path: "/missions",
     },
