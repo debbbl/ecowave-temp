@@ -127,7 +127,7 @@ export const AdminProfile = (): JSX.Element => {
                       isEditing 
                         ? 'bg-gray-600 hover:bg-gray-700' 
                         : 'bg-[#009A5A] hover:bg-[#008a50]'
-                    } text-white`}
+                    } text-white text-sm px-3 py-4 h-4`}
                   >
                     {isEditing ? (
                       <>
@@ -250,7 +250,7 @@ export const AdminProfile = (): JSX.Element => {
               </Button>
               <Button
                 onClick={handleProfileSave}
-                className="bg-[#009A5A] hover:bg-[#008a50] text-white"
+                className="bg-[#009A5A] hover:bg-[#008a50] text-white text-base px-3 py-4 h-6"
               >
                 <SaveIcon className="h-4 w-4 mr-2" />
                 Save Changes

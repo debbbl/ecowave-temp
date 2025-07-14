@@ -77,6 +77,36 @@ export interface AdminHistory {
   created_at: string;
 }
 
+export interface Mission {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  start_date: string;
+  end_date: string;
+  status?: 'active' | 'upcoming' | 'completed';
+  submission_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MissionSubmission {
+  id: string;
+  user_id: string;
+  mission_id: string;
+  photo_upload_count: number;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  month_year: string;
+  photo_path_1?: string;
+  photo_path_2?: string;
+  photo_path_3?: string;
+  user_name?: string;
+  user_email?: string;
+  user_avatar?: string;
+}
+
 export interface RewardRedemption {
   id: string;
   user_id: number;
@@ -120,6 +150,9 @@ export interface ImageUploadResult {
 
 // Abstract Data Service Interface
 export interface IDataService {
+  createMission: any;
+  getMissionSubmissions: any;
+  getMissions: any;
   // Authentication
   signIn(email: string, password: string): Promise<AuthResult>;
   signUp(email: string, password: string, fullName: string, role?: string): Promise<AuthResult>;
@@ -556,6 +589,176 @@ class SupabaseDataService implements IDataService {
       return { error: err.message };
     }
   }
+
+  async getMissions(): Promise<Mission[]> {
+  const { data, error } = await supabase
+    .from('monthly_missions')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  // For each mission, fetch submission count separately
+  const missionsWithCounts = await Promise.all(
+    data.map(async (m: any) => {
+      const { count } = await supabase
+        .from('user_monthly_missions')
+        .select('*', { count: 'exact', head: true })
+        .eq('mission_id', m.mission_id);
+
+      let status: 'active' | 'upcoming' | 'completed' = 'active';
+      const now = new Date();
+      const start = new Date(m.start_date);
+      const end = new Date(m.end_date);
+      if (now < start) status = 'upcoming';
+      else if (now > end) status = 'completed';
+
+      return {
+        id: m.mission_id.toString(),
+        title: m.title,
+        description: m.description,
+        points: m.points,
+        start_date: m.start_date,
+        end_date: m.end_date,
+        status,
+        submission_count: count || 0,
+        created_at: m.created_at,
+        updated_at: m.updated_at
+      };
+    })
+  );
+
+  return missionsWithCounts;
+}
+
+async createMission(mission: Partial<Mission>): Promise<{ data: Mission | null; error: string | null }> {
+  try {
+    // Format timestamp as 'YYYY-MM-DD HH:mm:ss.SSS+00'
+    const now = new Date();
+    const pad = (n: number, z = 2) => ('00' + n).slice(-z);
+    const formattedCreatedAt =
+      now.getUTCFullYear() + '-' +
+      pad(now.getUTCMonth() + 1) + '-' +
+      pad(now.getUTCDate()) + ' ' +
+      pad(now.getUTCHours()) + ':' +
+      pad(now.getUTCMinutes()) + ':' +
+      pad(now.getUTCSeconds()) + '.' +
+      (now.getUTCMilliseconds() + '00').slice(0, 3) + '+00';
+    const insertData = {
+      title: mission.title || '',
+      description: mission.description || '',
+      points: mission.points ?? 0,
+      created_at: formattedCreatedAt,
+      // No start_date/end_date
+    };
+    const { data, error } = await supabase
+      .from('monthly_missions')
+      .insert([insertData])
+      .select()
+      .single();
+    if (error) throw error;
+    // Patch: Provide a dummy end_date for Mission type compatibility (remove if not needed elsewhere)
+    return { data: { ...insertData, id: data.mission_id, created_at: data.created_at, updated_at: data.updated_at, end_date: data.end_date || data.created_at, start_date: data.created_at }, error: null };
+  } catch (err: any) {
+    return { data: null, error: err.message };
+  }
+}
+
+async updateMission(id: string, mission: Partial<Mission>): Promise<{ data: Mission | null; error: string | null }> {
+  try {
+    const updateData = {
+      ...mission,
+      title: mission.title || '',
+      description: mission.description || '',
+      points: mission.points ?? 0,
+      updated_at: new Date().toISOString(),
+      // No start_date, use created_at for compatibility
+    };
+    const { data, error } = await supabase
+      .from('monthly_missions')
+      .update(updateData)
+      .eq('mission_id', parseInt(id))
+      .select()
+      .single();
+    if (error) throw error;
+    return { data: { ...updateData, id: data.mission_id, created_at: data.created_at, updated_at: data.updated_at, end_date: data.end_date || data.created_at, start_date: data.created_at }, error: null };
+  } catch (err: any) {
+    return { data: null, error: err.message };
+  }
+}
+
+async deleteMission(id: string): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from('monthly_missions')
+      .delete()
+      .eq('mission_id', parseInt(id));
+    if (error) throw error;
+    return { error: null };
+  } catch (err: any) {
+    return { error: err.message };
+  }
+}
+
+async getMissionSubmissions(missionId: string): Promise<MissionSubmission[]> {
+  const { data, error } = await supabase
+    .from('user_monthly_missions')
+    .select(`
+      *,
+      users:user_id(first_name, last_name, email, profile_picture)
+    `)
+    .eq('mission_id', parseInt(missionId))
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  return data.map((s: any) => ({
+    id: s.user_id.toString(),
+    user_id: s.user_id.toString(),
+    mission_id: s.mission_id.toString(),
+    photo_upload_count: s.photo_upload_count,
+    status: s.status,
+    created_at: s.created_at,
+    updated_at: s.updated_at,
+    month_year: s.month_year,
+    photo_path_1: s.photo_path_1,
+    photo_path_2: s.photo_path_2,
+    photo_path_3: s.photo_path_3,
+    user_name: s.users ? `${s.users.first_name} ${s.users.last_name}` : '',
+    user_email: s.users?.email || '',
+    user_avatar: s.users?.profile_picture || ''
+  }));
+}
+
+async approveSubmission(userId: string, missionId: string): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from('user_monthly_missions')
+      .update({ status: 'approved', updated_at: new Date().toISOString() })
+      .eq('user_id', parseInt(userId))
+      .eq('mission_id', parseInt(missionId));
+    if (error) throw error;
+    // Optionally, add points to user here
+    return { error: null };
+  } catch (err: any) {
+    return { error: err.message };
+  }
+}
+
+async rejectSubmission(userId: string, missionId: string): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from('user_monthly_missions')
+      .update({ status: 'rejected', updated_at: new Date().toISOString() })
+      .eq('user_id', parseInt(userId))
+      .eq('mission_id', parseInt(missionId));
+    if (error) throw error;
+    return { error: null };
+  } catch (err: any) {
+    return { error: err.message };
+  }
+}
+  
   
   async getRewards(): Promise<Reward[]> {
     const { data, error } = await supabase

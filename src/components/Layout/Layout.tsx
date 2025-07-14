@@ -47,6 +47,11 @@ export const Layout = ({ children }: { children: React.ReactNode }): JSX.Element
       path: "/users",
     },
     { 
+      icon: <MessageSquareIcon size={21} />,
+      label: "Mission",
+      path: "/missions",
+    },
+    { 
       icon: <GiftIcon size={21} />,
       label: "Rewards",
       path: "/rewards",

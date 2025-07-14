@@ -655,7 +655,7 @@ export const Rewards = (): JSX.Element => {
           {currentView === 'rewards' && (
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-[#009A5A] hover:bg-[#008a50] text-white py-6 px-8 text-lg font-semibold w-full lg:w-auto">
+                <Button className="bg-[#009A5A] hover:bg-[#008a50] text-white py-3 px-5 text-lg font-semibold w-full lg:w-auto">
                   <PlusIcon className="mr-2 h-5 w-5" />
                   Add Reward
                 </Button>

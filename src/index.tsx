@@ -12,6 +12,7 @@ import { Feedback } from "./screens/Feedback/Feedback";
 import { AdminHistory } from "./screens/AdminHistory/AdminHistory";
 import { AdminProfile } from "./screens/AdminProfile/AdminProfile";
 import { useAuthContext } from "./components/Auth/AuthProvider";
+import { Missions } from "./screens/Missions/missions";
 
 function AppContent() {
   const { user, loading } = useAuthContext();
@@ -38,6 +39,7 @@ function AppContent() {
         <Route path="/events" element={<Events />} />
         <Route path="/users" element={<Users />} />
         <Route path="/rewards" element={<Rewards />} />
+        <Route path="/missions" element={<Missions />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/admin-history" element={<AdminHistory />} />
         <Route path="/admin-profile" element={<AdminProfile />} />

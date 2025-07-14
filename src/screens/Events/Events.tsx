@@ -668,7 +668,7 @@ export const Events = (): JSX.Element => {
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button 
-                className="bg-[#009A5A] hover:bg-[#008a50] text-white py-6 px-8 text-lg font-semibold w-full lg:w-auto"
+                className="bg-[#009A5A] hover:bg-[#008a50] text-white py-3 px-4 text-lg font-semibold w-full lg:w-auto"
                 onClick={() => {
                   console.log('Create Event button clicked');
                   setIsCreateDialogOpen(true);
